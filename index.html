@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brandit Pro System</title>
+
+<style>
+body{font-family:Arial;margin:0;background:#f5f5f5;}
+header{background:#4208CC;color:#fff;padding:15px;text-align:center;}
+
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px;}
+.card{background:#fff;padding:20px;text-align:center;border-radius:10px;cursor:pointer;}
+
+.section{display:none;padding:10px;}
+.active{display:block;}
+
+button{background:#FC8F00;border:none;padding:10px;color:#fff;border-radius:5px;margin:5px;}
+input{padding:10px;width:90%;margin:5px;}
+
+#chat{height:300px;overflow-y:auto;background:#fff;padding:10px;border-radius:10px;}
+.msg{margin:5px;padding:8px;border-radius:10px;}
+.user{background:#FC8F00;color:#fff;text-align:right;}
+.bot{background:#eee;}
+
+table{width:100%;border-collapse:collapse;margin-top:10px;}
+td,th{border:1px solid #ccc;padding:5px;}
+</style>
+</head>
+
+<body>
+
+<header>
+<h2>Brandit Pro System</h2>
+<p>by KarlBot</p>
+</header>
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="active">
+<div class="grid">
+<div class="card" onclick="openSection('work')">📊 Work</div>
+<div class="card" onclick="openSection('ai')">🤖 KarlBot</div>
+</div>
+</div>
+
+<!-- WORK -->
+<div id="work" class="section">
+<select id="day">
+<option>Monday</option><option>Tuesday</option>
+<option>Wednesday</option><option>Thursday</option>
+<option>Friday</option><option>Saturday</option>
+</select>
+
+<button onclick="addRow()">Add Row</button>
+<div id="tables"></div>
+<button onclick="goBack()">Back</button>
+</div>
+
+<!-- AI -->
+<div id="ai" class="section">
+<div id="chat"></div>
+<input id="q" placeholder="Ask anything...">
+<button onclick="ask()">Send</button>
+<button onclick="goBack()">Back</button>
+</div>
+
+<script>
+
+// NAVIGATION
+function openSection(id){
+ document.querySelectorAll('.section,#dashboard').forEach(e=>e.classList.remove('active'));
+ document.getElementById(id).classList.add('active');
+}
+function goBack(){
+ document.querySelectorAll('.section').forEach(e=>e.classList.remove('active'));
+ document.getElementById('dashboard').classList.add('active');
+}
+
+// SAVE
+function save(){localStorage.setItem("tables",tables.innerHTML);}
+function load(){if(localStorage.tables)tables.innerHTML=localStorage.tables;}
+
+// TABLE
+function addRow(){
+ let day=document.getElementById("day").value;
+
+ if(!document.getElementById(day)){
+ tables.innerHTML+=`
+ <div id="${day}">
+ <h4>${day}</h4>
+ <table>
+ <tr><th>Job</th><th>Description</th><th>Price</th><th>Paid</th><th>Balance</th><th>Unpaid</th><th>Expense</th><th>Cost</th></tr>
+ <tbody></tbody></table></div>`;
+ }
+
+ let t=document.querySelector(`#${day} tbody`);
+ let r=document.createElement("tr");
+
+ r.innerHTML=`
+ <td contenteditable></td>
+ <td contenteditable></td>
+ <td contenteditable oninput="calc(this)"></td>
+ <td contenteditable oninput="calc(this)"></td>
+ <td></td><td></td>
+ <td contenteditable></td>
+ <td contenteditable></td>
+ `;
+ r.oninput=save;
+ t.appendChild(r);
+}
+
+function calc(c){
+ let r=c.parentElement;
+ let p=Number(r.cells[2].innerText)||0;
+ let paid=Number(r.cells[3].innerText)||0;
+ r.cells[4].innerText=p-paid;
+ r.cells[5].innerText=(p-paid)>0?(p-paid):0;
+ save();
+}
+
+// 🔥 STOCK
+let stock = {
+"magic mugs red":{qty:77,unit:"pcs"},
+"stanley flasks large":{qty:60,unit:"pcs"},
+"stanley flasks small":{qty:53,unit:"pcs"},
+"antifall flasks black":{qty:22,unit:"pcs"},
+"thermal flasks":{qty:10,unit:"pcs"},
+"original stanley flasks":{qty:6,unit:"pcs"},
+"slub glass":{qty:42,unit:"pcs"},
+"glass tumblers":{qty:6,unit:"pcs"},
+
+"black t shirt small":{qty:8,unit:"pcs"},
+"black t shirt medium":{qty:4,unit:"pcs"},
+"white t shirt small":{qty:4,unit:"pcs"},
+"white t shirt medium":{qty:5,unit:"pcs"},
+"white t shirt large":{qty:2,unit:"pcs"},
+
+"polo t shirt blue medium":{qty:4,unit:"pcs"},
+"polo t shirt blue large":{qty:1,unit:"pcs"},
+"polo t shirt black small":{qty:2,unit:"pcs"},
+"polo t shirt black medium":{qty:3,unit:"pcs"},
+"polo t shirt black xl":{qty:1,unit:"pcs"},
+"polo t shirt white small":{qty:1,unit:"pcs"},
+"polo t shirt red medium":{qty:1,unit:"pcs"},
+"polo t shirt navy blue medium":{qty:1,unit:"pcs"},
+
+"notebooks various":{qty:120,unit:"pcs"},
+"leaf notebooks":{qty:5,unit:"pcs"},
+"decorative books":{qty:21,unit:"pcs"},
+
+"tap tap pens":{qty:147,unit:"pcs"},
+"bic pens":{qty:64,unit:"pcs"},
+"baoke pens":{qty:20,unit:"pcs"},
+
+"wristbands 1 inch red":{qty:1125,unit:"tickets"},
+"wristbands 1 inch yellow":{qty:4025,unit:"tickets"},
+"wristbands 1 inch blue":{qty:46,unit:"sheets"},
+"wristbands 1 inch green":{qty:6147,unit:"sheets"},
+"wristbands 1 inch white":{qty:1859,unit:"tickets"},
+
+"wristbands 2 inch red":{qty:1294,unit:"tickets"},
+"wristbands 2 inch yellow":{qty:4000,unit:"tickets"},
+"wristbands 2 inch white":{qty:5000,unit:"tickets"},
+"wristbands 2 inch purple":{qty:1000,unit:"tickets"},
+
+"black caps":{qty:107,unit:"pcs"},
+"white bags":{qty:50,unit:"pcs"}
+};
+
+// CHAT
+function msg(t,type){
+ let d=document.createElement("div");
+ d.className="msg "+type;
+ d.innerText=t;
+ chat.appendChild(d);
+ chat.scrollTop=chat.scrollHeight;
+}
+
+// 🤖 SMART AI
+function ask(){
+
+ let input = q.value.trim();
+ if(!input) return;
+
+ q.value="";
+ msg(input,"user");
+
+ let lower = input.toLowerCase();
+ let words = lower.split(" ");
+
+ let reply = "";
+ let results = [];
+ let total = 0;
+
+ // DATE
+ if(lower.includes("today") || lower.includes("date") || lower.includes("day")){
+   let now = new Date();
+   let days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+   let months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+   reply = `Today is ${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()} at ${now.getHours()}:${now.getMinutes()}`;
+ }
+
+ // GREETING
+ else if(lower.includes("hi") || lower.includes("hello") || lower.includes("hey") || lower.includes("morning") || lower.includes("evening")){
+   let hour = new Date().getHours();
+   if(hour < 12) reply = "Good morning ☀️ I'm KarlBot. How can I help you?";
+   else if(hour < 18) reply = "Good afternoon 🌤️ I'm KarlBot. What do you need?";
+   else reply = "Good evening 🌙 I'm KarlBot. How can I assist?";
+ }
+
+ // WHAT DO YOU HAVE
+ else if(lower.includes("what do you have") || lower.includes("items")){
+   let list = Object.keys(stock).slice(0,10).join(", ");
+   reply = "Here are some items:\n" + list + "\n...and more.";
+ }
+
+ // LOW STOCK
+ else if(lower.includes("low")){
+   let low=[];
+   for(let item in stock){
+     if(stock[item].qty <= 10){
+       low.push(`${item} (${stock[item].qty})`);
+     }
+   }
+   reply = low.length ? "⚠️ Low stock:\n"+low.join(", ") : "All stock levels are good 👍";
+ }
+
+ // SUMMARY
+ else if(lower.includes("summary") || lower.includes("sales")){
+   let rows=document.querySelectorAll("tbody tr");
+   let sales=0,exp=0;
+
+   rows.forEach(r=>{
+     sales+=Number(r.cells[2].innerText)||0;
+     exp+=Number(r.cells[7].innerText)||0;
+   });
+
+   reply=`Sales: ${sales} | Expenses: ${exp} | Profit: ${sales-exp}`;
+ }
+
+ // STOCK SEARCH
+ else{
+   for(let item in stock){
+     let itemText = item.toLowerCase();
+     let unit = stock[item].unit;
+
+     let match = words.some(w => 
+       w.length > 2 && (itemText.includes(w) || unit.includes(w))
+     );
+
+     if(match){
+       results.push(`${item} (${stock[item].qty} ${unit})`);
+       total += stock[item].qty;
+     }
+   }
+
+   if(results.length){
+     reply = results.join("\n") + `\n\nTotal available: ${total}`;
+   } else {
+     reply = "I didn’t fully understand 🤔 Try asking about stock, today, or summary.";
+   }
+ }
+
+ setTimeout(()=>msg(reply,"bot"),300);
+}
+
+// INIT
+window.onload=load;
+
+</script>
+
+</body>
+</html>
