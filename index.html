@@ -34,7 +34,6 @@ td,th{border:1px solid #ccc;padding:5px;}
 <p>by KarlBot</p>
 </header>
 
-<!-- DASHBOARD -->
 <div id="dashboard" class="active">
 <div class="grid">
 <div class="card" onclick="openSection('work')">📊 Work</div>
@@ -42,7 +41,6 @@ td,th{border:1px solid #ccc;padding:5px;}
 </div>
 </div>
 
-<!-- WORK -->
 <div id="work" class="section">
 <select id="day">
 <option>Monday</option><option>Tuesday</option>
@@ -55,7 +53,6 @@ td,th{border:1px solid #ccc;padding:5px;}
 <button onclick="goBack()">Back</button>
 </div>
 
-<!-- AI -->
 <div id="ai" class="section">
 <div id="chat"></div>
 <input id="q" placeholder="Ask anything...">
@@ -65,7 +62,7 @@ td,th{border:1px solid #ccc;padding:5px;}
 
 <script>
 
-// NAVIGATION
+// NAV
 function openSection(id){
  document.querySelectorAll('.section,#dashboard').forEach(e=>e.classList.remove('active'));
  document.getElementById(id).classList.add('active');
@@ -75,11 +72,10 @@ function goBack(){
  document.getElementById('dashboard').classList.add('active');
 }
 
-// SAVE
+// WORK TABLE
 function save(){localStorage.setItem("tables",tables.innerHTML);}
 function load(){if(localStorage.tables)tables.innerHTML=localStorage.tables;}
 
-// TABLE
 function addRow(){
  let day=document.getElementById("day").value;
 
@@ -117,7 +113,7 @@ function calc(c){
  save();
 }
 
-// 🔥 STOCK
+// STOCK
 let stock = {
 "magic mugs red":{qty:77,unit:"pcs"},
 "stanley flasks large":{qty:60,unit:"pcs"},
@@ -128,21 +124,6 @@ let stock = {
 "slub glass":{qty:42,unit:"pcs"},
 "glass tumblers":{qty:6,unit:"pcs"},
 
-"black t shirt small":{qty:8,unit:"pcs"},
-"black t shirt medium":{qty:4,unit:"pcs"},
-"white t shirt small":{qty:4,unit:"pcs"},
-"white t shirt medium":{qty:5,unit:"pcs"},
-"white t shirt large":{qty:2,unit:"pcs"},
-
-"polo t shirt blue medium":{qty:4,unit:"pcs"},
-"polo t shirt blue large":{qty:1,unit:"pcs"},
-"polo t shirt black small":{qty:2,unit:"pcs"},
-"polo t shirt black medium":{qty:3,unit:"pcs"},
-"polo t shirt black xl":{qty:1,unit:"pcs"},
-"polo t shirt white small":{qty:1,unit:"pcs"},
-"polo t shirt red medium":{qty:1,unit:"pcs"},
-"polo t shirt navy blue medium":{qty:1,unit:"pcs"},
-
 "notebooks various":{qty:120,unit:"pcs"},
 "leaf notebooks":{qty:5,unit:"pcs"},
 "decorative books":{qty:21,unit:"pcs"},
@@ -151,20 +132,23 @@ let stock = {
 "bic pens":{qty:64,unit:"pcs"},
 "baoke pens":{qty:20,unit:"pcs"},
 
-"wristbands 1 inch red":{qty:1125,unit:"tickets"},
-"wristbands 1 inch yellow":{qty:4025,unit:"tickets"},
-"wristbands 1 inch blue":{qty:46,unit:"sheets"},
-"wristbands 1 inch green":{qty:6147,unit:"sheets"},
-"wristbands 1 inch white":{qty:1859,unit:"tickets"},
-
-"wristbands 2 inch red":{qty:1294,unit:"tickets"},
-"wristbands 2 inch yellow":{qty:4000,unit:"tickets"},
-"wristbands 2 inch white":{qty:5000,unit:"tickets"},
-"wristbands 2 inch purple":{qty:1000,unit:"tickets"},
+"wristbands red":{qty:1125,unit:"tickets"},
+"wristbands yellow":{qty:4025,unit:"tickets"},
+"wristbands blue":{qty:46,unit:"sheets"},
 
 "black caps":{qty:107,unit:"pcs"},
 "white bags":{qty:50,unit:"pcs"}
 };
+
+// SAVE STOCK
+function saveStock(){
+ localStorage.setItem("stock", JSON.stringify(stock));
+}
+
+function loadStock(){
+ let saved = localStorage.getItem("stock");
+ if(saved){ stock = JSON.parse(saved); }
+}
 
 // CHAT
 function msg(t,type){
@@ -175,88 +159,75 @@ function msg(t,type){
  chat.scrollTop=chat.scrollHeight;
 }
 
-// 🤖 SMART AI
+// SMART MATCH
+function findItem(userText){
+ for(let item in stock){
+   let words=item.split(" ");
+   let match=words.some(w=>userText.includes(w));
+   if(match) return item;
+ }
+ return null;
+}
+
+// AI
 function ask(){
 
- let input = q.value.trim();
+ let input=q.value.trim();
  if(!input) return;
 
  q.value="";
  msg(input,"user");
 
- let lower = input.toLowerCase();
- let words = lower.split(" ");
+ let lower=input.toLowerCase();
+ let reply="";
 
- let reply = "";
- let results = [];
- let total = 0;
+ // SOLD
+ if(lower.includes("sold")){
+
+   let number=parseInt(lower.match(/\d+/));
+   let item=findItem(lower);
+
+   if(item){
+     if(stock[item].qty>=number){
+       stock[item].qty-=number;
+       saveStock();
+       reply=`✅ Sold ${number} ${item}. Remaining: ${stock[item].qty}`;
+     }else{
+       reply=`⚠️ Only ${stock[item].qty} left`;
+     }
+   }else{
+     reply="Item not found";
+   }
+ }
+
+ // ADD STOCK
+ else if(lower.includes("add")||lower.includes("restock")){
+
+   let number=parseInt(lower.match(/\d+/));
+   let item=findItem(lower);
+
+   if(item){
+     stock[item].qty+=number;
+     saveStock();
+     reply=`📦 Added ${number} ${item}. Total: ${stock[item].qty}`;
+   }else{
+     reply="Item not found";
+   }
+ }
 
  // DATE
- if(lower.includes("today") || lower.includes("date") || lower.includes("day")){
-   let now = new Date();
-   let days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-   let months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-   reply = `Today is ${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()} at ${now.getHours()}:${now.getMinutes()}`;
+ else if(lower.includes("today")){
+   let d=new Date();
+   reply="Today is "+d.toDateString();
  }
 
- // GREETING
- else if(lower.includes("hi") || lower.includes("hello") || lower.includes("hey") || lower.includes("morning") || lower.includes("evening")){
-   let hour = new Date().getHours();
-   if(hour < 12) reply = "Good morning ☀️ I'm KarlBot. How can I help you?";
-   else if(hour < 18) reply = "Good afternoon 🌤️ I'm KarlBot. What do you need?";
-   else reply = "Good evening 🌙 I'm KarlBot. How can I assist?";
- }
-
- // WHAT DO YOU HAVE
- else if(lower.includes("what do you have") || lower.includes("items")){
-   let list = Object.keys(stock).slice(0,10).join(", ");
-   reply = "Here are some items:\n" + list + "\n...and more.";
- }
-
- // LOW STOCK
- else if(lower.includes("low")){
-   let low=[];
-   for(let item in stock){
-     if(stock[item].qty <= 10){
-       low.push(`${item} (${stock[item].qty})`);
-     }
-   }
-   reply = low.length ? "⚠️ Low stock:\n"+low.join(", ") : "All stock levels are good 👍";
- }
-
- // SUMMARY
- else if(lower.includes("summary") || lower.includes("sales")){
-   let rows=document.querySelectorAll("tbody tr");
-   let sales=0,exp=0;
-
-   rows.forEach(r=>{
-     sales+=Number(r.cells[2].innerText)||0;
-     exp+=Number(r.cells[7].innerText)||0;
-   });
-
-   reply=`Sales: ${sales} | Expenses: ${exp} | Profit: ${sales-exp}`;
- }
-
- // STOCK SEARCH
+ // SEARCH
  else{
-   for(let item in stock){
-     let itemText = item.toLowerCase();
-     let unit = stock[item].unit;
-
-     let match = words.some(w => 
-       w.length > 2 && (itemText.includes(w) || unit.includes(w))
-     );
-
-     if(match){
-       results.push(`${item} (${stock[item].qty} ${unit})`);
-       total += stock[item].qty;
-     }
-   }
-
-   if(results.length){
-     reply = results.join("\n") + `\n\nTotal available: ${total}`;
-   } else {
-     reply = "I didn’t fully understand 🤔 Try asking about stock, today, or summary.";
+   let item=findItem(lower);
+   if(item){
+     reply=`${item}: ${stock[item].qty} ${stock[item].unit}`;
+   }else{
+     reply="Try: sold 2 mugs, add 5 notebooks, today";
    }
  }
 
@@ -264,8 +235,10 @@ function ask(){
 }
 
 // INIT
-window.onload=load;
-
+window.onload=function(){
+ load();
+ loadStock();
+}
 </script>
 
 </body>
