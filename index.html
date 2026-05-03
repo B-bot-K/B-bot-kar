@@ -125,7 +125,7 @@ function calc(c){
  saveWork();
 }
 
-// STOCK
+// STOCK SYSTEM
 let stock={
  "mugs":50,
  "stanley":30,
@@ -136,7 +136,6 @@ let stock={
 let history=[];
 let lastItem=null;
 
-// SAVE
 function saveAll(){
  localStorage.setItem("stock",JSON.stringify(stock));
  localStorage.setItem("history",JSON.stringify(history));
@@ -158,69 +157,36 @@ function msg(t,type){
  chat.scrollTop=chat.scrollHeight;
 }
 
-// SMART HELPERS
-const WORD_NUM={"one":1,"two":2,"three":3,"four":4,"five":5,"six":6,"seven":7,"eight":8,"nine":9,"ten":10,"couple":2};
-const ALIASES={"mug":"mugs","mugs":"mugs","stanley":"stanley","flask":"stanley","notebook":"notebooks","book":"notebooks","band":"wristbands"};
+// SMART LOCAL COMMANDS
+function handleLocalCommand(input){
 
-function normalize(t){return t.toLowerCase();}
+ let t=input.toLowerCase();
 
-function convertWords(t){
- for(let w in WORD_NUM){
-  t=t.replace(new RegExp("\\b"+w+"\\b","g"),WORD_NUM[w]);
+ // numbers
+ let words={"one":1,"two":2,"three":3,"four":4,"five":5};
+ for(let w in words){
+  t=t.replace(w,words[w]);
  }
- return t;
-}
 
-function extractNumber(t){
- let m=t.match(/(\d+\s*[\+\-]\s*\d+|\d+)/);
- if(!m) return 0;
- try{return eval(m[1]);}catch{return parseInt(m[1])||0;}
-}
+ let qty=parseInt((t.match(/\d+/)||[0])[0]);
+ let item=null;
 
-function findItem(t){
- for(let k in ALIASES){
-  if(t.includes(k)) return ALIASES[k];
- }
  for(let i in stock){
-  if(t.includes(i)) return i;
+  if(t.includes(i) || t.includes(i.slice(0,-1))){
+    item=i;
+  }
  }
- return lastItem;
-}
-
-// AI
-function ask(){
-
- let input=q.value.trim();
- if(!input)return;
-
- q.value="";
- msg(input,"user");
-
- let t=normalize(input);
- t=convertWords(t);
-
- let qty=extractNumber(t);
- let item=findItem(t);
 
  let reply="";
 
- if(t.includes("hi")||t.includes("hello")||t.includes("morning")){
-  reply="Hello 👋 I'm Br Bot. How can I help you?";
- }
-
- else if(t.includes("today")){
-  reply="Today is "+new Date().toDateString();
- }
-
- else if(t.includes("sold")){
+ if(t.includes("sold")){
   if(item && qty){
    stock[item]-=qty;
    history.push({type:"sale",item,qty});
    lastItem=item;
-   saveAll();
    reply=`✅ Sold ${qty} ${item}. Remaining: ${stock[item]}`;
   }else{
-   reply="Try: sold 2 mugs";
+   reply="Say: sold 2 mugs";
   }
  }
 
@@ -229,10 +195,9 @@ function ask(){
    stock[item]+=qty;
    history.push({type:"add",item,qty});
    lastItem=item;
-   saveAll();
    reply=`📦 Added ${qty} ${item}. Total: ${stock[item]}`;
   }else{
-   reply="Try: add 5 notebooks";
+   reply="Say: add 5 notebooks";
   }
  }
 
@@ -251,14 +216,45 @@ function ask(){
  }
 
  else if(item){
-  reply=`${item}: ${stock[item]} remaining`;
+  reply=`${item}: ${stock[item]}`;
  }
 
- else{
-  reply="Try: sold 2 mugs, add 5 notebooks, report";
+ msg(reply,"bot");
+ saveAll();
+}
+
+// AI FUNCTION
+async function ask(){
+
+ let input=q.value.trim();
+ if(!input)return;
+
+ q.value="";
+ msg(input,"user");
+
+ let lower=input.toLowerCase();
+
+ // LOCAL FIRST
+ if(lower.includes("sold")||lower.includes("add")||lower.includes("report")||lower.includes("low")){
+   handleLocalCommand(input);
+   return;
  }
 
- setTimeout(()=>msg(reply,"bot"),300);
+ // REAL AI
+ try{
+   let res=await fetch("/api/chat",{
+     method:"POST",
+     headers:{"Content-Type":"application/json"},
+     body:JSON.stringify({message:input})
+   });
+
+   let data=await res.json();
+
+   msg(data.reply || "AI error","bot");
+
+ }catch(e){
+   msg("⚠️ AI connection failed","bot");
+ }
 }
 
 // INIT
