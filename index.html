@@ -3,7 +3,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KarlBot Pro System</title>
+<title>Br Bot Pro System</title>
 
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#4208CC">
@@ -36,7 +36,7 @@ h4{margin:10px 0 0 0;}
 <body>
 
 <header>
-<h2>KarlBot Pro System</h2>
+<h2>Br Bot Pro System</h2>
 </header>
 
 <!-- DASHBOARD -->
@@ -44,7 +44,7 @@ h4{margin:10px 0 0 0;}
 <div id="dashboard" class="active">
   <div class="grid">
     <div class="card" onclick="openSection('work')">📊 Work</div>
-    <div class="card" onclick="openSection('ai')">🤖 KarlBot</div>
+    <div class="card" onclick="openSection('ai')">🤖 Br Bot</div>
   </div>
 </div>
 
@@ -74,7 +74,7 @@ h4{margin:10px 0 0 0;}
 
 <script>
 
-// ================= NAV =================
+// NAV
 function openSection(id){
   document.querySelectorAll('.section,#dashboard').forEach(e=>e.classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -84,7 +84,7 @@ function goBack(){
   document.getElementById('dashboard').classList.add('active');
 }
 
-// ================= WORK SYSTEM =================
+// WORK SYSTEM
 function saveWork(){
   localStorage.setItem("tables", tables.innerHTML);
 }
@@ -144,7 +144,7 @@ function calc(c){
   saveWork();
 }
 
-// ================= STOCK + AI =================
+// STOCK + AI
 let stock = {
   "mugs": 50,
   "stanley": 30,
@@ -193,7 +193,6 @@ function ask(){
   let lower = input.toLowerCase();
   let reply = "";
 
-  // SOLD
   if(lower.includes("sold")){
     let n = parseInt((lower.match(/\d+/)||[0])[0]);
     let item = findItem(lower);
@@ -209,7 +208,6 @@ function ask(){
     }
   }
 
-  // ADD / RESTOCK
   else if(lower.includes("add") || lower.includes("restock")){
     let n = parseInt((lower.match(/\d+/)||[0])[0]);
     let item = findItem(lower);
@@ -225,7 +223,6 @@ function ask(){
     }
   }
 
-  // UNDO
   else if(lower.includes("undo")){
     if(lastAction){
       if(lastAction.type==="sale"){
@@ -240,14 +237,12 @@ function ask(){
     }
   }
 
-  // REPORT
   else if(lower.includes("report")){
     let total = 0;
     history.forEach(h=>{ if(h.type==="sale") total += h.qty; });
     reply = `📊 Total items sold: ${total}`;
   }
 
-  // LOW STOCK
   else if(lower.includes("low")){
     let lowItems = [];
     for(let i in stock){
@@ -256,12 +251,10 @@ function ask(){
     reply = lowItems.length ? `⚠️ Low: ${lowItems.join(", ")}` : "All stock ok";
   }
 
-  // DATE
   else if(lower.includes("today")){
     reply = new Date().toDateString();
   }
 
-  // CHECK
   else{
     let item = findItem(lower);
     if(item){
@@ -274,13 +267,13 @@ function ask(){
   setTimeout(()=>msg(reply,"bot"),300);
 }
 
-// ================= INIT =================
+// INIT
 window.onload = function(){
   loadWork();
   loadAll();
 };
 
-// ================= SERVICE WORKER =================
+// SERVICE WORKER
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('sw.js');
 }
