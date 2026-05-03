@@ -1,7 +1,8 @@
 {
   "name": "KarlBot",
   "short_name": "KarlBot",
-  "start_url": "./index.html",
+  "start_url": "/B-bot-kar/",
+  "scope": "/B-bot-kar/",
   "display": "standalone",
   "background_color": "#4208CC",
   "theme_color": "#4208CC",
