@@ -1,8 +1,9 @@
 <!DOCTYPE html>
+
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KarlBot Pro</title>
+<title>KarlBot Pro+</title>
 
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#4208CC">
@@ -28,13 +29,12 @@ input{padding:10px;width:90%;margin:5px;}
 table{width:100%;border-collapse:collapse;margin-top:10px;}
 td,th{border:1px solid #ccc;padding:5px;text-align:center;}
 </style>
+
 </head>
 
 <body>
 
-<header>
-<h2>KarlBot Pro System</h2>
-</header>
+<header><h2>KarlBot Pro+</h2></header>
 
 <div id="dashboard" class="active">
 <div class="grid">
@@ -43,20 +43,21 @@ td,th{border:1px solid #ccc;padding:5px;text-align:center;}
 </div>
 </div>
 
-<!-- WORK SECTION -->
+<!-- WORK -->
+
 <div id="work" class="section">
 <select id="day">
 <option>Monday</option><option>Tuesday</option>
 <option>Wednesday</option><option>Thursday</option>
 <option>Friday</option><option>Saturday</option>
 </select>
-
 <button onclick="addRow()">Add Job</button>
 <div id="tables"></div>
 <button onclick="goBack()">Back</button>
 </div>
 
-<!-- AI SECTION -->
+<!-- AI -->
+
 <div id="ai" class="section">
 <div id="chat"></div>
 <input id="q" placeholder="Ask anything...">
@@ -76,16 +77,9 @@ function goBack(){
  document.getElementById('dashboard').classList.add('active');
 }
 
-// ================= WORK SYSTEM =================
-function saveWork(){
- localStorage.setItem("tables",tables.innerHTML);
-}
-
-function loadWork(){
- if(localStorage.tables){
-  tables.innerHTML=localStorage.tables;
- }
-}
+// WORK
+function saveWork(){localStorage.setItem("tables",tables.innerHTML);}
+function loadWork(){if(localStorage.tables){tables.innerHTML=localStorage.tables;}}
 
 function addRow(){
  let day=document.getElementById("day").value;
@@ -98,8 +92,7 @@ function addRow(){
   <tr>
   <th>Job</th><th>Description</th><th>Price</th>
   <th>Paid</th><th>Balance</th><th>Unpaid</th>
-  </tr>
-  <tbody></tbody></table></div>`;
+  </tr><tbody></tbody></table></div>`;
  }
 
  let t=document.querySelector(`#${day} tbody`);
@@ -110,8 +103,7 @@ function addRow(){
  <td contenteditable></td>
  <td contenteditable oninput="calc(this)"></td>
  <td contenteditable oninput="calc(this)"></td>
- <td></td>
- <td></td>
+ <td></td><td></td>
  `;
 
  r.oninput=saveWork;
@@ -120,17 +112,15 @@ function addRow(){
 
 function calc(c){
  let r=c.parentElement;
- let price=Number(r.cells[2].innerText)||0;
+ let p=Number(r.cells[2].innerText)||0;
  let paid=Number(r.cells[3].innerText)||0;
-
- let bal=price-paid;
+ let bal=p-paid;
  r.cells[4].innerText=bal;
  r.cells[5].innerText=bal>0?bal:0;
-
  saveWork();
 }
 
-// ================= STOCK SYSTEM =================
+// STOCK
 let stock={
 "mugs":50,
 "stanley":30,
@@ -138,16 +128,23 @@ let stock={
 "wristbands":5000
 };
 
-function saveStock(){
+let history=[];
+
+// SAVE
+function saveAll(){
  localStorage.setItem("stock",JSON.stringify(stock));
+ localStorage.setItem("history",JSON.stringify(history));
 }
 
-function loadStock(){
+function loadAll(){
  let s=localStorage.getItem("stock");
- if(s){stock=JSON.parse(s);}
+ if(s) stock=JSON.parse(s);
+
+ let h=localStorage.getItem("history");
+ if(h) history=JSON.parse(h);
 }
 
-// ================= CHAT =================
+// CHAT
 function msg(t,type){
  let d=document.createElement("div");
  d.className="msg "+type;
@@ -162,6 +159,8 @@ function findItem(text){
  }
  return null;
 }
+
+let lastAction=null;
 
 function ask(){
  let input=q.value.trim();
@@ -180,9 +179,19 @@ function ask(){
 
   if(item){
    stock[item]-=n;
-   saveStock();
+
+   history.push({
+    type:"sale",
+    item,
+    qty:n,
+    date:new Date().toLocaleString()
+   });
+
+   lastAction={type:"sale",item,qty:n};
+
+   saveAll();
    reply=`✅ Sold ${n} ${item}. Remaining: ${stock[item]}`;
-  }else reply="Item not found";
+  }
  }
 
  // ADD
@@ -192,9 +201,54 @@ function ask(){
 
   if(item){
    stock[item]+=n;
-   saveStock();
+
+   history.push({
+    type:"add",
+    item,
+    qty:n,
+    date:new Date().toLocaleString()
+   });
+
+   lastAction={type:"add",item,qty:n};
+
+   saveAll();
    reply=`📦 Added ${n} ${item}. Total: ${stock[item]}`;
-  }else reply="Item not found";
+  }
+ }
+
+ // UNDO
+ else if(lower.includes("undo")){
+  if(lastAction){
+   if(lastAction.type==="sale"){
+    stock[lastAction.item]+=lastAction.qty;
+   }else{
+    stock[lastAction.item]-=lastAction.qty;
+   }
+   saveAll();
+   reply="↩️ Last action undone";
+  }else{
+   reply="Nothing to undo";
+  }
+ }
+
+ // REPORT
+ else if(lower.includes("report")){
+  let today=new Date().toDateString();
+  let sales=history.filter(h=>h.type==="sale");
+
+  let total=0;
+  sales.forEach(s=>total+=s.qty);
+
+  reply=`📊 Total items sold: ${total}`;
+ }
+
+ // LOW STOCK
+ else if(lower.includes("low")){
+  let lowItems=[];
+  for(let i in stock){
+   if(stock[i]<10) lowItems.push(i);
+  }
+  reply=lowItems.length?`⚠️ Low: ${lowItems.join(", ")}`:"All stock ok";
  }
 
  // DATE
@@ -202,13 +256,13 @@ function ask(){
   reply=new Date().toDateString();
  }
 
- // CHECK STOCK
+ // CHECK
  else{
   let item=findItem(lower);
   if(item){
    reply=`${item}: ${stock[item]}`;
   }else{
-   reply="Try: sold 2 mugs, add 5 notebooks";
+   reply="Try: sold 2 mugs, report, undo, low stock";
   }
  }
 
@@ -218,10 +272,10 @@ function ask(){
 // INIT
 window.onload=function(){
  loadWork();
- loadStock();
+ loadAll();
 }
 
-// SERVICE WORKER
+// SW
 if('serviceWorker' in navigator){
  navigator.serviceWorker.register('sw.js');
 }
