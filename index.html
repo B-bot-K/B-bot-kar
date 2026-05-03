@@ -3,7 +3,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KarlBot Pro+</title>
+<title>KarlBot Pro System</title>
 
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#4208CC">
@@ -27,257 +27,262 @@ input{padding:10px;width:90%;margin:5px;}
 .bot{background:#eee;}
 
 table{width:100%;border-collapse:collapse;margin-top:10px;}
-td,th{border:1px solid #ccc;padding:5px;text-align:center;}
+td,th{border:1px solid #ccc;padding:6px;text-align:center;}
+h4{margin:10px 0 0 0;}
 </style>
 
 </head>
 
 <body>
 
-<header><h2>KarlBot Pro+</h2></header>
+<header>
+<h2>KarlBot Pro System</h2>
+</header>
+
+<!-- DASHBOARD -->
 
 <div id="dashboard" class="active">
-<div class="grid">
-<div class="card" onclick="openSection('work')">📊 Work</div>
-<div class="card" onclick="openSection('ai')">🤖 KarlBot</div>
-</div>
+  <div class="grid">
+    <div class="card" onclick="openSection('work')">📊 Work</div>
+    <div class="card" onclick="openSection('ai')">🤖 KarlBot</div>
+  </div>
 </div>
 
-<!-- WORK -->
+<!-- WORK SECTION -->
 
 <div id="work" class="section">
-<select id="day">
-<option>Monday</option><option>Tuesday</option>
-<option>Wednesday</option><option>Thursday</option>
-<option>Friday</option><option>Saturday</option>
-</select>
+  <select id="day">
+    <option>Monday</option><option>Tuesday</option>
+    <option>Wednesday</option><option>Thursday</option>
+    <option>Friday</option><option>Saturday</option>
+  </select>
+
 <button onclick="addRow()">Add Job</button>
-<div id="tables"></div>
-<button onclick="goBack()">Back</button>
+
+  <div id="tables"></div>
+  <button onclick="goBack()">Back</button>
 </div>
 
-<!-- AI -->
+<!-- AI SECTION -->
 
 <div id="ai" class="section">
-<div id="chat"></div>
-<input id="q" placeholder="Ask anything...">
-<button onclick="ask()">Send</button>
-<button onclick="goBack()">Back</button>
+  <div id="chat"></div>
+  <input id="q" placeholder="Ask anything...">
+  <button onclick="ask()">Send</button>
+  <button onclick="goBack()">Back</button>
 </div>
 
 <script>
 
-// NAV
+// ================= NAV =================
 function openSection(id){
- document.querySelectorAll('.section,#dashboard').forEach(e=>e.classList.remove('active'));
- document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.section,#dashboard').forEach(e=>e.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
 }
 function goBack(){
- document.querySelectorAll('.section').forEach(e=>e.classList.remove('active'));
- document.getElementById('dashboard').classList.add('active');
+  document.querySelectorAll('.section').forEach(e=>e.classList.remove('active'));
+  document.getElementById('dashboard').classList.add('active');
 }
 
-// WORK
-function saveWork(){localStorage.setItem("tables",tables.innerHTML);}
-function loadWork(){if(localStorage.tables){tables.innerHTML=localStorage.tables;}}
+// ================= WORK SYSTEM =================
+function saveWork(){
+  localStorage.setItem("tables", tables.innerHTML);
+}
+
+function loadWork(){
+  if(localStorage.tables){
+    tables.innerHTML = localStorage.tables;
+  }
+}
 
 function addRow(){
- let day=document.getElementById("day").value;
+  let day = document.getElementById("day").value;
 
- if(!document.getElementById(day)){
-  tables.innerHTML+=`
-  <div id="${day}">
-  <h4>${day}</h4>
-  <table>
-  <tr>
-  <th>Job</th><th>Description</th><th>Price</th>
-  <th>Paid</th><th>Balance</th><th>Unpaid</th>
-  </tr><tbody></tbody></table></div>`;
- }
+  if(!document.getElementById(day)){
+    tables.innerHTML += `
+    <div id="${day}">
+      <h4>${day}</h4>
+      <table>
+        <tr>
+          <th>Job</th>
+          <th>Description</th>
+          <th>Price</th>
+          <th>Paid</th>
+          <th>Balance</th>
+          <th>Unpaid</th>
+        </tr>
+        <tbody></tbody>
+      </table>
+    </div>`;
+  }
 
- let t=document.querySelector(`#${day} tbody`);
- let r=document.createElement("tr");
+  let t = document.querySelector(`#${day} tbody`);
+  let r = document.createElement("tr");
 
- r.innerHTML=`
- <td contenteditable></td>
- <td contenteditable></td>
- <td contenteditable oninput="calc(this)"></td>
- <td contenteditable oninput="calc(this)"></td>
- <td></td><td></td>
- `;
+  r.innerHTML = `
+    <td contenteditable></td>
+    <td contenteditable></td>
+    <td contenteditable oninput="calc(this)"></td>
+    <td contenteditable oninput="calc(this)"></td>
+    <td></td>
+    <td></td>
+  `;
 
- r.oninput=saveWork;
- t.appendChild(r);
+  r.oninput = saveWork;
+  t.appendChild(r);
 }
 
 function calc(c){
- let r=c.parentElement;
- let p=Number(r.cells[2].innerText)||0;
- let paid=Number(r.cells[3].innerText)||0;
- let bal=p-paid;
- r.cells[4].innerText=bal;
- r.cells[5].innerText=bal>0?bal:0;
- saveWork();
+  let r = c.parentElement;
+  let price = Number(r.cells[2].innerText) || 0;
+  let paid  = Number(r.cells[3].innerText) || 0;
+
+  let bal = price - paid;
+  r.cells[4].innerText = bal;
+  r.cells[5].innerText = bal > 0 ? bal : 0;
+
+  saveWork();
 }
 
-// STOCK
-let stock={
-"mugs":50,
-"stanley":30,
-"notebooks":100,
-"wristbands":5000
+// ================= STOCK + AI =================
+let stock = {
+  "mugs": 50,
+  "stanley": 30,
+  "notebooks": 100,
+  "wristbands": 5000
 };
 
-let history=[];
+let history = [];
+let lastAction = null;
 
-// SAVE
 function saveAll(){
- localStorage.setItem("stock",JSON.stringify(stock));
- localStorage.setItem("history",JSON.stringify(history));
+  localStorage.setItem("stock", JSON.stringify(stock));
+  localStorage.setItem("history", JSON.stringify(history));
 }
 
 function loadAll(){
- let s=localStorage.getItem("stock");
- if(s) stock=JSON.parse(s);
+  let s = localStorage.getItem("stock");
+  if(s) stock = JSON.parse(s);
 
- let h=localStorage.getItem("history");
- if(h) history=JSON.parse(h);
+  let h = localStorage.getItem("history");
+  if(h) history = JSON.parse(h);
 }
 
-// CHAT
 function msg(t,type){
- let d=document.createElement("div");
- d.className="msg "+type;
- d.innerText=t;
- chat.appendChild(d);
- chat.scrollTop=chat.scrollHeight;
+  let d = document.createElement("div");
+  d.className = "msg " + type;
+  d.innerText = t;
+  chat.appendChild(d);
+  chat.scrollTop = chat.scrollHeight;
 }
 
 function findItem(text){
- for(let i in stock){
-  if(text.includes(i)) return i;
- }
- return null;
+  for(let i in stock){
+    if(text.includes(i)) return i;
+  }
+  return null;
 }
-
-let lastAction=null;
 
 function ask(){
- let input=q.value.trim();
- if(!input)return;
+  let input = q.value.trim();
+  if(!input) return;
 
- q.value="";
- msg(input,"user");
+  q.value = "";
+  msg(input,"user");
 
- let lower=input.toLowerCase();
- let reply="";
+  let lower = input.toLowerCase();
+  let reply = "";
 
- // SOLD
- if(lower.includes("sold")){
-  let n=parseInt(lower.match(/\d+/));
-  let item=findItem(lower);
+  // SOLD
+  if(lower.includes("sold")){
+    let n = parseInt((lower.match(/\d+/)||[0])[0]);
+    let item = findItem(lower);
 
-  if(item){
-   stock[item]-=n;
-
-   history.push({
-    type:"sale",
-    item,
-    qty:n,
-    date:new Date().toLocaleString()
-   });
-
-   lastAction={type:"sale",item,qty:n};
-
-   saveAll();
-   reply=`✅ Sold ${n} ${item}. Remaining: ${stock[item]}`;
+    if(item){
+      stock[item] -= n;
+      history.push({type:"sale", item, qty:n, date:new Date().toLocaleString()});
+      lastAction = {type:"sale", item, qty:n};
+      saveAll();
+      reply = `✅ Sold ${n} ${item}. Remaining: ${stock[item]}`;
+    } else {
+      reply = "Item not found";
+    }
   }
- }
 
- // ADD
- else if(lower.includes("add")||lower.includes("restock")){
-  let n=parseInt(lower.match(/\d+/));
-  let item=findItem(lower);
+  // ADD / RESTOCK
+  else if(lower.includes("add") || lower.includes("restock")){
+    let n = parseInt((lower.match(/\d+/)||[0])[0]);
+    let item = findItem(lower);
 
-  if(item){
-   stock[item]+=n;
-
-   history.push({
-    type:"add",
-    item,
-    qty:n,
-    date:new Date().toLocaleString()
-   });
-
-   lastAction={type:"add",item,qty:n};
-
-   saveAll();
-   reply=`📦 Added ${n} ${item}. Total: ${stock[item]}`;
+    if(item){
+      stock[item] += n;
+      history.push({type:"add", item, qty:n, date:new Date().toLocaleString()});
+      lastAction = {type:"add", item, qty:n};
+      saveAll();
+      reply = `📦 Added ${n} ${item}. Total: ${stock[item]}`;
+    } else {
+      reply = "Item not found";
+    }
   }
- }
 
- // UNDO
- else if(lower.includes("undo")){
-  if(lastAction){
-   if(lastAction.type==="sale"){
-    stock[lastAction.item]+=lastAction.qty;
-   }else{
-    stock[lastAction.item]-=lastAction.qty;
-   }
-   saveAll();
-   reply="↩️ Last action undone";
-  }else{
-   reply="Nothing to undo";
+  // UNDO
+  else if(lower.includes("undo")){
+    if(lastAction){
+      if(lastAction.type==="sale"){
+        stock[lastAction.item] += lastAction.qty;
+      } else {
+        stock[lastAction.item] -= lastAction.qty;
+      }
+      saveAll();
+      reply = "↩️ Last action undone";
+    } else {
+      reply = "Nothing to undo";
+    }
   }
- }
 
- // REPORT
- else if(lower.includes("report")){
-  let today=new Date().toDateString();
-  let sales=history.filter(h=>h.type==="sale");
-
-  let total=0;
-  sales.forEach(s=>total+=s.qty);
-
-  reply=`📊 Total items sold: ${total}`;
- }
-
- // LOW STOCK
- else if(lower.includes("low")){
-  let lowItems=[];
-  for(let i in stock){
-   if(stock[i]<10) lowItems.push(i);
+  // REPORT
+  else if(lower.includes("report")){
+    let total = 0;
+    history.forEach(h=>{ if(h.type==="sale") total += h.qty; });
+    reply = `📊 Total items sold: ${total}`;
   }
-  reply=lowItems.length?`⚠️ Low: ${lowItems.join(", ")}`:"All stock ok";
- }
 
- // DATE
- else if(lower.includes("today")){
-  reply=new Date().toDateString();
- }
-
- // CHECK
- else{
-  let item=findItem(lower);
-  if(item){
-   reply=`${item}: ${stock[item]}`;
-  }else{
-   reply="Try: sold 2 mugs, report, undo, low stock";
+  // LOW STOCK
+  else if(lower.includes("low")){
+    let lowItems = [];
+    for(let i in stock){
+      if(stock[i] < 10) lowItems.push(i);
+    }
+    reply = lowItems.length ? `⚠️ Low: ${lowItems.join(", ")}` : "All stock ok";
   }
- }
 
- setTimeout(()=>msg(reply,"bot"),300);
+  // DATE
+  else if(lower.includes("today")){
+    reply = new Date().toDateString();
+  }
+
+  // CHECK
+  else{
+    let item = findItem(lower);
+    if(item){
+      reply = `${item}: ${stock[item]}`;
+    } else {
+      reply = "Try: sold 2 mugs, add 5 notebooks, report, undo, low stock";
+    }
+  }
+
+  setTimeout(()=>msg(reply,"bot"),300);
 }
 
-// INIT
-window.onload=function(){
- loadWork();
- loadAll();
-}
+// ================= INIT =================
+window.onload = function(){
+  loadWork();
+  loadAll();
+};
 
-// SW
+// ================= SERVICE WORKER =================
 if('serviceWorker' in navigator){
- navigator.serviceWorker.register('sw.js');
+  navigator.serviceWorker.register('sw.js');
 }
 
 </script>
