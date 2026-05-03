@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KarlBot App</title>
+<title>KarlBot Pro</title>
 
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#4208CC">
@@ -10,39 +10,144 @@
 <style>
 body{font-family:Arial;margin:0;background:#f5f5f5;}
 header{background:#4208CC;color:#fff;padding:15px;text-align:center;}
-#chat{height:300px;overflow-y:auto;background:#fff;padding:10px;}
+
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px;}
+.card{background:#fff;padding:20px;text-align:center;border-radius:10px;cursor:pointer;}
+
+.section{display:none;padding:10px;}
+.active{display:block;}
+
+button{background:#FC8F00;border:none;padding:10px;color:#fff;border-radius:5px;margin:5px;}
+input{padding:10px;width:90%;margin:5px;}
+
+#chat{height:300px;overflow-y:auto;background:#fff;padding:10px;border-radius:10px;}
 .msg{margin:5px;padding:8px;border-radius:10px;}
 .user{background:#FC8F00;color:#fff;text-align:right;}
 .bot{background:#eee;}
-input{width:80%;padding:10px;}
-button{padding:10px;background:#4208CC;color:#fff;border:none;}
+
+table{width:100%;border-collapse:collapse;margin-top:10px;}
+td,th{border:1px solid #ccc;padding:5px;text-align:center;}
 </style>
 </head>
 
 <body>
 
-<header><h2>KarlBot</h2></header>
+<header>
+<h2>KarlBot Pro System</h2>
+</header>
 
+<div id="dashboard" class="active">
+<div class="grid">
+<div class="card" onclick="openSection('work')">📊 Work</div>
+<div class="card" onclick="openSection('ai')">🤖 KarlBot</div>
+</div>
+</div>
+
+<!-- WORK SECTION -->
+<div id="work" class="section">
+<select id="day">
+<option>Monday</option><option>Tuesday</option>
+<option>Wednesday</option><option>Thursday</option>
+<option>Friday</option><option>Saturday</option>
+</select>
+
+<button onclick="addRow()">Add Job</button>
+<div id="tables"></div>
+<button onclick="goBack()">Back</button>
+</div>
+
+<!-- AI SECTION -->
+<div id="ai" class="section">
 <div id="chat"></div>
-<input id="q" placeholder="Type here...">
+<input id="q" placeholder="Ask anything...">
 <button onclick="ask()">Send</button>
+<button onclick="goBack()">Back</button>
+</div>
 
 <script>
 
+// NAV
+function openSection(id){
+ document.querySelectorAll('.section,#dashboard').forEach(e=>e.classList.remove('active'));
+ document.getElementById(id).classList.add('active');
+}
+function goBack(){
+ document.querySelectorAll('.section').forEach(e=>e.classList.remove('active'));
+ document.getElementById('dashboard').classList.add('active');
+}
+
+// ================= WORK SYSTEM =================
+function saveWork(){
+ localStorage.setItem("tables",tables.innerHTML);
+}
+
+function loadWork(){
+ if(localStorage.tables){
+  tables.innerHTML=localStorage.tables;
+ }
+}
+
+function addRow(){
+ let day=document.getElementById("day").value;
+
+ if(!document.getElementById(day)){
+  tables.innerHTML+=`
+  <div id="${day}">
+  <h4>${day}</h4>
+  <table>
+  <tr>
+  <th>Job</th><th>Description</th><th>Price</th>
+  <th>Paid</th><th>Balance</th><th>Unpaid</th>
+  </tr>
+  <tbody></tbody></table></div>`;
+ }
+
+ let t=document.querySelector(`#${day} tbody`);
+ let r=document.createElement("tr");
+
+ r.innerHTML=`
+ <td contenteditable></td>
+ <td contenteditable></td>
+ <td contenteditable oninput="calc(this)"></td>
+ <td contenteditable oninput="calc(this)"></td>
+ <td></td>
+ <td></td>
+ `;
+
+ r.oninput=saveWork;
+ t.appendChild(r);
+}
+
+function calc(c){
+ let r=c.parentElement;
+ let price=Number(r.cells[2].innerText)||0;
+ let paid=Number(r.cells[3].innerText)||0;
+
+ let bal=price-paid;
+ r.cells[4].innerText=bal;
+ r.cells[5].innerText=bal>0?bal:0;
+
+ saveWork();
+}
+
+// ================= STOCK SYSTEM =================
 let stock={
 "mugs":50,
 "stanley":30,
-"notebooks":100
+"notebooks":100,
+"wristbands":5000
 };
 
 function saveStock(){
  localStorage.setItem("stock",JSON.stringify(stock));
 }
+
 function loadStock(){
  let s=localStorage.getItem("stock");
  if(s){stock=JSON.parse(s);}
 }
 
+// ================= CHAT =================
 function msg(t,type){
  let d=document.createElement("div");
  d.className="msg "+type;
@@ -68,30 +173,36 @@ function ask(){
  let lower=input.toLowerCase();
  let reply="";
 
+ // SOLD
  if(lower.includes("sold")){
   let n=parseInt(lower.match(/\d+/));
   let item=findItem(lower);
+
   if(item){
    stock[item]-=n;
    saveStock();
-   reply=`Sold ${n} ${item}. Remaining: ${stock[item]}`;
+   reply=`✅ Sold ${n} ${item}. Remaining: ${stock[item]}`;
   }else reply="Item not found";
  }
 
- else if(lower.includes("add")){
+ // ADD
+ else if(lower.includes("add")||lower.includes("restock")){
   let n=parseInt(lower.match(/\d+/));
   let item=findItem(lower);
+
   if(item){
    stock[item]+=n;
    saveStock();
-   reply=`Added ${n} ${item}. Total: ${stock[item]}`;
+   reply=`📦 Added ${n} ${item}. Total: ${stock[item]}`;
   }else reply="Item not found";
  }
 
+ // DATE
  else if(lower.includes("today")){
   reply=new Date().toDateString();
  }
 
+ // CHECK STOCK
  else{
   let item=findItem(lower);
   if(item){
@@ -104,8 +215,13 @@ function ask(){
  setTimeout(()=>msg(reply,"bot"),300);
 }
 
-window.onload=loadStock;
+// INIT
+window.onload=function(){
+ loadWork();
+ loadStock();
+}
 
+// SERVICE WORKER
 if('serviceWorker' in navigator){
  navigator.serviceWorker.register('sw.js');
 }
