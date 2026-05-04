@@ -8,21 +8,16 @@
 <style>
 body{font-family:Arial;margin:0;background:#f5f5f5;}
 header{background:#4208CC;color:#fff;padding:15px;text-align:center;}
-
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px;}
 .card{background:#fff;padding:20px;text-align:center;border-radius:10px;cursor:pointer;}
-
 .section{display:none;padding:10px;}
 .active{display:block;}
-
 button{background:#FC8F00;border:none;padding:10px;color:#fff;border-radius:5px;margin:5px;}
 input{padding:10px;width:90%;margin:5px;}
-
 #chat{height:300px;overflow-y:auto;background:#fff;padding:10px;border-radius:10px;}
 .msg{margin:5px;padding:8px;border-radius:10px;}
 .user{background:#FC8F00;color:#fff;text-align:right;}
 .bot{background:#eee;}
-
 table{width:100%;border-collapse:collapse;margin-top:10px;}
 td,th{border:1px solid #ccc;padding:6px;text-align:center;}
 </style>
@@ -133,6 +128,7 @@ let stock={
 let history=[];
 let lastItem=null;
 
+// STORAGE
 function saveAll(){
  localStorage.setItem("stock",JSON.stringify(stock));
  localStorage.setItem("history",JSON.stringify(history));
@@ -146,6 +142,7 @@ function loadAll(){
  if(h) history=JSON.parse(h);
 }
 
+// UI
 function msg(t,type){
  let d=document.createElement("div");
  d.className="msg "+type;
@@ -154,83 +151,122 @@ function msg(t,type){
  chat.scrollTop=chat.scrollHeight;
 }
 
-// SMART AI
-function understand(input){
+// SMART AI ENGINE
+function normalize(text){
+ let t=text.toLowerCase();
 
- let t=input.toLowerCase();
+ const numbers={
+  one:1,two:2,three:3,four:4,five:5,
+  six:6,seven:7,eight:8,nine:9,ten:10,
+  couple:2
+ };
 
- let numbers={one:1,two:2,three:3,four:4,five:5};
  for(let n in numbers){
-  t=t.replace(n,numbers[n]);
+  t=t.replace(new RegExp("\\b"+n+"\\b","g"),numbers[n]);
  }
 
- let qty=parseInt((t.match(/\d+/)||[0])[0]);
+ return t;
+}
 
- let item=null;
+function extractQty(t){
+ let m=t.match(/\d+/);
+ return m?parseInt(m[0]):null;
+}
+
+function findItem(t){
  for(let i in stock){
   if(t.includes(i) || t.includes(i.slice(0,-1))){
-    item=i;
+   return i;
   }
  }
+ return lastItem;
+}
 
+// INTENT
+function understand(input){
+
+ let t=normalize(input);
+ let qty=extractQty(t);
+ let item=findItem(t);
+
+ if(t.match(/hi|hello|hey|morning|evening/)) return {type:"greet"};
  if(t.match(/sell|sold|gave|removed/)) return {type:"sell",item,qty};
- if(t.match(/add|restock|bought/)) return {type:"add",item,qty};
- if(t.match(/report|sales/)) return {type:"report"};
- if(t.match(/low|running out/)) return {type:"low"};
- if(t.match(/restock|suggest/)) return {type:"suggest"};
- if(t.match(/top|best/)) return {type:"top"};
+ if(t.match(/add|restock|bought|increase/)) return {type:"add",item,qty};
+ if(t.match(/report|sales|summary/)) return {type:"report"};
+ if(t.match(/low|running out|almost finished/)) return {type:"low"};
+ if(t.match(/suggest|what.*restock|recommend/)) return {type:"suggest"};
+ if(t.match(/top|best|most selling/)) return {type:"top"};
  if(item) return {type:"check",item};
 
  return {type:"unknown"};
 }
 
+// RESPONSE
 function respond(intent){
 
  let {type,item,qty}=intent;
 
- if(type==="sell" && item && qty){
+ if(type==="greet"){
+  return "Hey 👋 I'm Br Bot! Ready to help you run your business 🚀";
+ }
+
+ if(type==="sell"){
+  if(!item) return "Which item did you sell? 🤔";
+  if(!qty) return `How many ${item} did you sell?`;
+
   stock[item]-=qty;
   history.push({type:"sale",item,qty});
   lastItem=item;
   saveAll();
-  return `✅ Sold ${qty} ${item}. Remaining: ${stock[item]}`;
+
+  return `✅ Nice! You sold ${qty} ${item}. Remaining: ${stock[item]} 🎯`;
  }
 
- if(type==="add" && item && qty){
+ if(type==="add"){
+  if(!item) return "Which item are you adding?";
+  if(!qty) return `How many ${item} are you adding?`;
+
   stock[item]+=qty;
   history.push({type:"add",item,qty});
   lastItem=item;
   saveAll();
-  return `📦 Added ${qty} ${item}. Total: ${stock[item]}`;
+
+  return `📦 Great! Added ${qty} ${item}. Total now: ${stock[item]}`;
  }
 
  if(type==="report"){
   let total=history.filter(h=>h.type==="sale").reduce((a,b)=>a+b.qty,0);
-  return `📊 Total sold: ${total}`;
+  return `📊 So far you've sold ${total} items. Keep going 🚀`;
  }
 
  if(type==="low"){
   let low=Object.keys(stock).filter(i=>stock[i]<10);
-  return low.length?`⚠️ Low: ${low.join(", ")}`:"Stock ok";
+  return low.length?`⚠️ You're low on: ${low.join(", ")}`:"👌 Stock levels look good";
  }
 
  if(type==="suggest"){
   let s=Object.entries(stock).sort((a,b)=>a[1]-b[1])[0];
-  return `📦 Restock: ${s[0]} (${s[1]} left)`;
+  return `📦 You should restock ${s[0]} (only ${s[1]} left)`;
  }
 
  if(type==="top"){
   let count={};
-  history.forEach(h=>{if(h.type==="sale"){count[h.item]=(count[h.item]||0)+h.qty;}});
+  history.forEach(h=>{
+   if(h.type==="sale"){
+    count[h.item]=(count[h.item]||0)+h.qty;
+   }
+  });
+
   let top=Object.entries(count).sort((a,b)=>b[1]-a[1])[0];
-  return top?`🔥 Best: ${top[0]} (${top[1]} sold)`:"No sales yet";
+
+  return top?`🔥 Best seller: ${top[0]} (${top[1]} sold)`:"No sales yet";
  }
 
  if(type==="check"){
-  return `${item}: ${stock[item]}`;
+  return `📦 You have ${stock[item]} ${item} remaining`;
  }
 
- return "Try: sold 2 mugs or what should I restock";
+ return "Hmm 🤔 Try saying something like 'sold 2 mugs' or 'what should I restock'";
 }
 
 // MAIN
@@ -252,7 +288,7 @@ function ask(){
 window.onload=function(){
  loadWork();
  loadAll();
- msg("👋 I'm your smart business assistant.","bot");
+ msg("👋 Hi! I'm Br Bot — your smart business assistant 🚀","bot");
 };
 
 </script>
