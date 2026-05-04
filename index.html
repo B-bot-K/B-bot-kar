@@ -3,7 +3,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Br Bot Smart System</title>
+<title>Brandit System</title>
 
 <style>
 body{font-family:Arial;margin:0;background:#f5f5f5;}
@@ -26,7 +26,7 @@ td,th{border:1px solid #ccc;padding:6px;text-align:center;}
 
 <body>
 
-<header><h2>Br Bot Smart System</h2></header>
+<header><h2>Brandit System</h2></header>
 
 <!-- DASHBOARD -->
 
@@ -56,7 +56,7 @@ td,th{border:1px solid #ccc;padding:6px;text-align:center;}
 
 <div id="ai" class="section">
   <div id="chat"></div>
-  <input id="q" placeholder="Talk to Br Bot...">
+  <input id="q" placeholder="Talk to Brandit Assistant...">
   <button onclick="ask()">Send</button>
   <button onclick="goBack()">Back</button>
 </div>
@@ -151,7 +151,7 @@ function msg(t,type){
  chat.scrollTop=chat.scrollHeight;
 }
 
-// SMART AI ENGINE
+// SMART AI
 function normalize(text){
  let t=text.toLowerCase();
 
@@ -207,7 +207,7 @@ function respond(intent){
  let {type,item,qty}=intent;
 
  if(type==="greet"){
-  return "Hey 👋 I'm Br Bot! Ready to help you run your business 🚀";
+  return "Hey 👋 Welcome to Brandit! I'm here to help your business grow 🚀";
  }
 
  if(type==="sell"){
@@ -219,7 +219,7 @@ function respond(intent){
   lastItem=item;
   saveAll();
 
-  return `✅ Nice! You sold ${qty} ${item}. Remaining: ${stock[item]} 🎯`;
+  return `✅ Great job! You sold ${qty} ${item}. Remaining: ${stock[item]} 🎯`;
  }
 
  if(type==="add"){
@@ -231,22 +231,22 @@ function respond(intent){
   lastItem=item;
   saveAll();
 
-  return `📦 Great! Added ${qty} ${item}. Total now: ${stock[item]}`;
+  return `📦 Nice! Added ${qty} ${item}. Total now: ${stock[item]}`;
  }
 
  if(type==="report"){
   let total=history.filter(h=>h.type==="sale").reduce((a,b)=>a+b.qty,0);
-  return `📊 So far you've sold ${total} items. Keep going 🚀`;
+  return `📊 You've sold ${total} items so far. Keep pushing 💪`;
  }
 
  if(type==="low"){
   let low=Object.keys(stock).filter(i=>stock[i]<10);
-  return low.length?`⚠️ You're low on: ${low.join(", ")}`:"👌 Stock levels look good";
+  return low.length?`⚠️ You're running low on: ${low.join(", ")}`:"👌 Your stock looks healthy";
  }
 
  if(type==="suggest"){
   let s=Object.entries(stock).sort((a,b)=>a[1]-b[1])[0];
-  return `📦 You should restock ${s[0]} (only ${s[1]} left)`;
+  return `📦 You should restock ${s[0]} first (only ${s[1]} left)`;
  }
 
  if(type==="top"){
@@ -263,10 +263,10 @@ function respond(intent){
  }
 
  if(type==="check"){
-  return `📦 You have ${stock[item]} ${item} remaining`;
+  return `📦 You currently have ${stock[item]} ${item} remaining`;
  }
 
- return "Hmm 🤔 Try saying something like 'sold 2 mugs' or 'what should I restock'";
+ return "Hmm 🤔 Try something like 'sold 2 mugs' or 'what should I restock'";
 }
 
 // MAIN
@@ -288,7 +288,7 @@ function ask(){
 window.onload=function(){
  loadWork();
  loadAll();
- msg("👋 Hi! I'm Br Bot — your smart business assistant 🚀","bot");
+ msg("👋 Hi! Welcome to Brandit System — your smart business assistant 🚀","bot");
 };
 
 </script>
