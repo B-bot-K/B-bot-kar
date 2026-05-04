@@ -45,9 +45,7 @@ td,th{border:1px solid #ccc;padding:6px;text-align:center;}
     <option>Wednesday</option><option>Thursday</option>
     <option>Friday</option><option>Saturday</option>
   </select>
-
-<button onclick="addRow()">Add Job</button>
-
+  <button onclick="addRow()">Add Job</button>
   <div id="tables"></div>
   <button onclick="goBack()">Back</button>
 </div>
@@ -63,7 +61,7 @@ td,th{border:1px solid #ccc;padding:6px;text-align:center;}
 
 <script>
 
-// NAV
+// ===== NAV =====
 function openSection(id){
  document.querySelectorAll('.section,#dashboard').forEach(e=>e.classList.remove('active'));
  document.getElementById(id).classList.add('active');
@@ -73,7 +71,7 @@ function goBack(){
  document.getElementById('dashboard').classList.add('active');
 }
 
-// WORK SYSTEM
+// ===== WORK =====
 function saveWork(){ localStorage.setItem("tables",tables.innerHTML); }
 function loadWork(){ if(localStorage.tables){ tables.innerHTML=localStorage.tables; } }
 
@@ -117,32 +115,24 @@ function calc(c){
  saveWork();
 }
 
-// STOCK
-let stock={
- mugs:50,
- stanley:30,
- notebooks:100,
- wristbands:5000
-};
-
+// ===== STOCK =====
+let stock={mugs:50,stanley:30,notebooks:100,wristbands:5000};
 let history=[];
 let lastItem=null;
 
-// STORAGE
+// ===== STORAGE =====
 function saveAll(){
  localStorage.setItem("stock",JSON.stringify(stock));
  localStorage.setItem("history",JSON.stringify(history));
 }
-
 function loadAll(){
  let s=localStorage.getItem("stock");
  if(s) stock=JSON.parse(s);
-
  let h=localStorage.getItem("history");
  if(h) history=JSON.parse(h);
 }
 
-// UI
+// ===== UI =====
 function msg(t,type){
  let d=document.createElement("div");
  d.className="msg "+type;
@@ -151,26 +141,21 @@ function msg(t,type){
  chat.scrollTop=chat.scrollHeight;
 }
 
-// SMART AI
-function normalize(text){
- let t=text.toLowerCase();
-
- const numbers={
-  one:1,two:2,three:3,four:4,five:5,
-  six:6,seven:7,eight:8,nine:9,ten:10,
-  couple:2
- };
-
- for(let n in numbers){
-  t=t.replace(new RegExp("\\b"+n+"\\b","g"),numbers[n]);
+// ===== HELPERS =====
+function normalize(t){
+ t=t.toLowerCase();
+ let map={one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10};
+ for(let w in map){
+  t=t.replace(new RegExp("\\b"+w+"\\b","g"),map[w]);
  }
-
  return t;
 }
 
-function extractQty(t){
- let m=t.match(/\d+/);
- return m?parseInt(m[0]):null;
+function getDate(type){
+ let d=new Date();
+ if(type==="today") return d.toDateString();
+ if(type==="tomorrow"){d.setDate(d.getDate()+1); return d.toDateString();}
+ if(type==="yesterday"){d.setDate(d.getDate()-1); return d.toDateString();}
 }
 
 function findItem(t){
@@ -182,94 +167,7 @@ function findItem(t){
  return lastItem;
 }
 
-// INTENT
-function understand(input){
-
- let t=normalize(input);
- let qty=extractQty(t);
- let item=findItem(t);
-
- if(t.match(/hi|hello|hey|morning|evening/)) return {type:"greet"};
- if(t.match(/sell|sold|gave|removed/)) return {type:"sell",item,qty};
- if(t.match(/add|restock|bought|increase/)) return {type:"add",item,qty};
- if(t.match(/report|sales|summary/)) return {type:"report"};
- if(t.match(/low|running out|almost finished/)) return {type:"low"};
- if(t.match(/suggest|what.*restock|recommend/)) return {type:"suggest"};
- if(t.match(/top|best|most selling/)) return {type:"top"};
- if(item) return {type:"check",item};
-
- return {type:"unknown"};
-}
-
-// RESPONSE
-function respond(intent){
-
- let {type,item,qty}=intent;
-
- if(type==="greet"){
-  return "Hey 👋 Welcome to Brandit! I'm here to help your business grow 🚀";
- }
-
- if(type==="sell"){
-  if(!item) return "Which item did you sell? 🤔";
-  if(!qty) return `How many ${item} did you sell?`;
-
-  stock[item]-=qty;
-  history.push({type:"sale",item,qty});
-  lastItem=item;
-  saveAll();
-
-  return `✅ Great job! You sold ${qty} ${item}. Remaining: ${stock[item]} 🎯`;
- }
-
- if(type==="add"){
-  if(!item) return "Which item are you adding?";
-  if(!qty) return `How many ${item} are you adding?`;
-
-  stock[item]+=qty;
-  history.push({type:"add",item,qty});
-  lastItem=item;
-  saveAll();
-
-  return `📦 Nice! Added ${qty} ${item}. Total now: ${stock[item]}`;
- }
-
- if(type==="report"){
-  let total=history.filter(h=>h.type==="sale").reduce((a,b)=>a+b.qty,0);
-  return `📊 You've sold ${total} items so far. Keep pushing 💪`;
- }
-
- if(type==="low"){
-  let low=Object.keys(stock).filter(i=>stock[i]<10);
-  return low.length?`⚠️ You're running low on: ${low.join(", ")}`:"👌 Your stock looks healthy";
- }
-
- if(type==="suggest"){
-  let s=Object.entries(stock).sort((a,b)=>a[1]-b[1])[0];
-  return `📦 You should restock ${s[0]} first (only ${s[1]} left)`;
- }
-
- if(type==="top"){
-  let count={};
-  history.forEach(h=>{
-   if(h.type==="sale"){
-    count[h.item]=(count[h.item]||0)+h.qty;
-   }
-  });
-
-  let top=Object.entries(count).sort((a,b)=>b[1]-a[1])[0];
-
-  return top?`🔥 Best seller: ${top[0]} (${top[1]} sold)`:"No sales yet";
- }
-
- if(type==="check"){
-  return `📦 You currently have ${stock[item]} ${item} remaining`;
- }
-
- return "Hmm 🤔 Try something like 'sold 2 mugs' or 'what should I restock'";
-}
-
-// MAIN
+// ===== MAIN AI =====
 function ask(){
 
  let input=q.value.trim();
@@ -278,8 +176,110 @@ function ask(){
  q.value="";
  msg(input,"user");
 
- let intent=understand(input);
- let reply=respond(intent);
+ let t=normalize(input);
+ let qty=(t.match(/\d+/)||[0])[0];
+ qty=qty?parseInt(qty):null;
+ let item=findItem(t);
+
+ let reply="";
+
+// GREET
+ if(t.match(/hi|hello|hey|good morning|good evening/)){
+  reply="Hey 👋 Welcome to Brandit! How can I help you today?";
+ }
+
+// DATE
+ else if(t.includes("today")){
+  reply=`📅 Today is ${getDate("today")}`;
+ }
+ else if(t.includes("tomorrow")){
+  reply=`📅 Tomorrow is ${getDate("tomorrow")}`;
+ }
+ else if(t.includes("yesterday")){
+  reply=`📅 Yesterday was ${getDate("yesterday")}`;
+ }
+
+// TIME
+ else if(t.includes("time")){
+  reply=`⏰ Current time: ${new Date().toLocaleTimeString()}`;
+ }
+
+// CASUAL
+ else if(t.includes("how are you")){
+  reply="😊 I'm doing great! Ready to help your business.";
+ }
+ else if(t.includes("your name")){
+  reply="I'm Brandit Assistant 🤖";
+ }
+ else if(t.includes("what can you do")){
+  reply="I track stock, record sales, give reports and suggestions 📊";
+ }
+
+// SELL
+ else if(t.match(/sell|sold|gave/)){
+  if(!item) reply="Which item did you sell?";
+  else if(!qty) reply=`How many ${item}?`;
+  else{
+   stock[item]-=qty;
+   history.push({type:"sale",item,qty});
+   lastItem=item;
+   saveAll();
+   reply=`✅ Sold ${qty} ${item}. Remaining: ${stock[item]}`;
+  }
+ }
+
+// ADD
+ else if(t.match(/add|restock|bought/)){
+  if(!item) reply="Which item are you adding?";
+  else if(!qty) reply=`How many ${item}?`;
+  else{
+   stock[item]+=qty;
+   history.push({type:"add",item,qty});
+   lastItem=item;
+   saveAll();
+   reply=`📦 Added ${qty} ${item}. Total: ${stock[item]}`;
+  }
+ }
+
+// REPORT
+ else if(t.includes("report") || t.includes("sales")){
+  let total=history.filter(h=>h.type==="sale").reduce((a,b)=>a+b.qty,0);
+  reply=`📊 Total sold: ${total}`;
+ }
+
+// LOW
+ else if(t.includes("low") || t.includes("running out")){
+  let low=Object.keys(stock).filter(i=>stock[i]<10);
+  reply=low.length?`⚠️ Low stock: ${low.join(", ")}`:"Stock levels are okay";
+ }
+
+// SUGGEST
+ else if(t.includes("suggest") || t.includes("restock")){
+  let s=Object.entries(stock).sort((a,b)=>a[1]-b[1])[0];
+  reply=`📦 You should restock ${s[0]} (${s[1]} left)`;
+ }
+
+// TOP
+ else if(t.includes("best") || t.includes("top")){
+  let count={};
+  history.forEach(h=>{
+   if(h.type==="sale"){
+    count[h.item]=(count[h.item]||0)+h.qty;
+   }
+  });
+  let top=Object.entries(count).sort((a,b)=>b[1]-a[1])[0];
+  reply=top?`🔥 Best selling: ${top[0]}`:"No sales yet";
+ }
+
+// CHECK
+ else if(item){
+  reply=`📦 ${item}: ${stock[item]} left`;
+ }
+
+// FALLBACK
+ else{
+  reply="🤔 I didn’t fully understand, but I can answer questions, track stock, and help your business.";
+ }
 
  msg(reply,"bot");
 }
@@ -288,7 +288,7 @@ function ask(){
 window.onload=function(){
  loadWork();
  loadAll();
- msg("👋 Hi! Welcome to Brandit System — your smart business assistant 🚀","bot");
+ msg("👋 Hi! I'm Brandit Assistant — ask me anything or manage your business 🚀","bot");
 };
 
 </script>
